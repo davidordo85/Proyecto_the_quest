@@ -1,16 +1,16 @@
 import pygame as pg
 import random
+from pygame.locals import *
 
 FPS = 60
+DARK_GREEN = (0, 125, 0)
 
 class Nave(pg.sprite.Sprite):
     vx = 0
     vy = 0
     w = 65
     h = 65
-
-
-          
+    num_sprites = 17      
     clock = pg.time.Clock()
      
     
@@ -18,7 +18,7 @@ class Nave(pg.sprite.Sprite):
         super().__init__()        
         self.image = pg.Surface((self.w, self.h), pg.SRCALPHA, 32)
         self.rect = self.image.get_rect()
-
+        self.images = self.loadImages()
         
         self.rect.centerx = x
         self.rect.centery = y
@@ -28,64 +28,58 @@ class Nave(pg.sprite.Sprite):
         self.animation_time = FPS//1000 * 3
         self.angle = 0
         self.current_time = 0
-        self.image_act = 0
-        self.image.blit(self.images[self.image_act], [0, 0])
-
+        self.image_act = 0               
         self.frame = pg.image.load('./resources/images/nave/Spaceships_0.png').convert_alpha()
         self.image.blit(self.frame, (0, 0), (0, 0, self.w, self.h))
         
+        self.estado = False
         self.rotando = False
-
 
 
         self.destroy = pg.mixer.Sound('./resources/sounds/retro-explosion-07.wav')
 
         self.rect.centerx = 40
         self.rect.centery = 300
-
-    def loadExplosion(self):
+            
+    
+    def loadImages(self):
         images = []
         for i in range(self.num_sprites):
             image = pg.image.load("./resources/images/nave/Spaceships_{}.png".format(i))
             images.append(image)
         return images
 
-
-
-    
     def estrellado(self, group):
         lista_colision = pg.sprite.spritecollide(self, group, False)
         if len(lista_colision) > 0:
             self.destroy.play()
-        self.image_act += 1
-        if self.image_act >= self.num_sprites:
-            self.image_act = 17
-
-        self.image.blit(self.images[self.image_act], (0, 0))
+            self.estado = True
             
+        else:
+            pass
 
-
-
-   
+    def boom(self):
+        if self.estado is True:
+            self.image_act += 1            
+            if self.image_act >= self.num_sprites:
+                self.image_act = 16
+            self.image.blit(self.images[self.image_act], (0, 0))
+        else:
+            pass
 
     def update(self, limSupX, limSupY):
         self.rect.centerx += self.vx
         self.rect.centery += self.vy
         if self.rect.centerx >= 570:
             self.vx = 0
-        if self.rect.centerx <= 40:
-            self.vx = 0
-
 
         if self.rect.centery < self.rect.h // 2:
             self.rect.centery = self.rect.h // 2
 
         if self.rect.centery > limSupY - self.rect.h // 2:
             self.rect.centery = limSupY - self.rect.h // 2
-
         
     def rotate(self):
-        self.estado = 'Inicial'
         if self.rotando is True: # si la rotacion es ok
             self.angle = (self.angle +1)%360 # giro de 360º
             self.image = pg.transform.rotate(self.frame, self.angle) # transforma la imagen en el giro
@@ -250,4 +244,54 @@ class Planeta_Final(pg.sprite.Sprite):
 
         self.rect.centerx -= self.vx
 
+
+class Alias_records():
+    valor = 0
+    caracteres = ""
+    w = 133
+    h = 28
+    position = [0, 0]
+
+    def __init__(self, valor = ""):
+        super().__init__()
+        self.fuente = pg.font.SysFont("Arial", 25)
+        self.caracteres = (valor)
         
+
+    def render(self):
+        textBlock = self.fuente.render(self.caracteres, True, (74, 74, 74))
+        rect = textBlock.get_rect()
+        rect.left = self.position[0]
+        rect.top = self.position[1]
+        rect.size = (self.w, self.h)
+
+        return (rect, textBlock)
+
+
+    def posX(self, val=None):
+        if val == None:
+            return self.position[0]
+        else:
+            try:
+                self.position[0] = int(val)
+            except:
+                pass
+
+    def posY(self, val=None):
+        if val == None:
+            return self.position[1]
+        else:
+            try:
+                self.position[1] = int(val)
+            except:
+                pass
+
+    def pos(self, val=None):
+        if val == None:
+            return self.position
+        else:
+            try:
+                self.position = [int(val[0]), int(val[1])]
+            except:
+                pass
+

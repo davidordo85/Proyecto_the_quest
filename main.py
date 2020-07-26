@@ -2,13 +2,13 @@ import pygame as pg
 import sys
 import objetos
 import random
+from pygame.locals import * 
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 DARK_GREEN = (0, 125, 0)
-WIN_PRIMER_NIVEL = 100 # pongo el valor de puntos para la condición de victoria
-WIN_SEGUNDO_NIVEL = 1200
-WIN_TERCER_NIVEL = 4000
+WIN_PRIMER_NIVEL = 3000 # pongo el valor de puntos para la condición de victoria
+WIN_SEGUNDO_NIVEL = 7000
 
 
 class Main(): # creo la clase principal
@@ -22,6 +22,7 @@ class Main(): # creo la clase principal
         self.pulsa_espacio = pg.font.Font('./resources/fonts/Modak-Regular.ttf', 30) # cargo una fuente para pulsar espacio
         self.instrucciones = pg.font.Font('./resources/fonts/LexendZetta-Regular.ttf', 20) # cargo una fuente para las instrucciones
         self.numeros = pg.font.Font('./resources/fonts/DancingScript-Bold.ttf', 35) # cargo fuente para la puntuacion
+        self.gameOver = pg.font.Font('./resources/fonts/Modak-Regular.ttf', 100)
         self.status = 'Portada' # inicializo el nivel por el que empieza
         
         self.text_inicial = self.titulo_juego.render("THE QUEST", False, WHITE, DARK_GREEN) # fuente texto inicial
@@ -46,6 +47,10 @@ class Main(): # creo la clase principal
         self.asteroidGold0 = objetos.AsteroidGold()
         self.asteroidGold1 = objetos.AsteroidGold()
 
+        self.escritura = objetos.Alias_records("")
+        self.escritura.pos((337, 315))
+
+
         self.planeta = objetos.Planeta() # creo el planeta
         self.planeta1 = objetos.Planeta_Final()
 
@@ -63,6 +68,7 @@ class Main(): # creo la clase principal
         self.asteroidsGroup.add(self.asteroid5)
         self.asteroidsGroup.add(self.asteroidGold0)
         self.asteroidsGroup.add(self.asteroidGold1)
+
 
         #self.puntuacion = self.instrucciones.render(str(self.score), True, WHITE) # creo la puntuación y la cargo con la fuente
         self.score = 0
@@ -100,13 +106,14 @@ class Main(): # creo la clase principal
                 return self.quit()
                 
             if event.type == pg.KEYDOWN:
-
-
                 if event.key == pg.K_UP:
-                    self.nave.vy  = -5                        
-                        
-                if event.key == pg.K_DOWN:
+                    self.nave.vy  = -5
+                elif event.key == pg.K_DOWN:
                     self.nave.vy  = 5
+
+
+
+
 
         key_pressed = pg.key.get_pressed() # Aumenta la velocidad con tecla pulsada
         if key_pressed[pg.K_UP]:
@@ -128,6 +135,10 @@ class Main(): # creo la clase principal
 
         while not Primer:
             Primer = self.handlenEvent()
+            if self.nave.estado is True:
+                Primer = True
+                self.status = 'Final'
+
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     Primer = True
@@ -135,12 +146,18 @@ class Main(): # creo la clase principal
             
             self.nave.update(800, 600)
             self.nave.rotate()
+            self.nave.boom()
             
             self.asteroidNivel1.update(800, 600)
             self.nave.estrellado(self.asteroidsGroup)
+
+
+
+
             #self.nave.aterrizado(self.allsprite)
             
             # puntos al pasar la pantalla
+
             if self.asteroid0.rect.centerx <= 0 or self.asteroid1.rect.centerx <= 0 or self.asteroid2.rect.centerx <= 0:
                 self.score += 20
                 self.puntuacion = self.numeros.render(str(self.score), True, WHITE)
@@ -149,6 +166,11 @@ class Main(): # creo la clase principal
                 self.puntuacion = self.numeros.render(str(self.score), True, WHITE)
             else:
                 self.score = int(self.score)
+
+                if self.nave.estado == True:
+                    Primer = False
+                    self.status = 'Nivel_2'
+
                 if self.score >= WIN_PRIMER_NIVEL:
                     self.planeta.update(800, 600)
                     self.nave.rotando = True
@@ -166,9 +188,13 @@ class Main(): # creo la clase principal
                         pg.sprite.Group.empty(self.asteroidNivel1)
                         
 
+
                     if self.nave.rect.centerx >= 570:
                         self.score += 1000
                         Primer = True
+                        self.status = 'Nivel_2'
+                    
+
                         
 
             p -= 0.5
@@ -187,7 +213,7 @@ class Main(): # creo la clase principal
             pg.display.flip()
             self.clock.tick(30)
 
-        self.status = 'Nivel_2'
+
 
 
     def segundo_nivel(self):
@@ -198,6 +224,10 @@ class Main(): # creo la clase principal
         self.nave.rotando = True
         while not Segundo:
             Segundo = self.handlenEvent()
+            if self.nave.estado is True:
+                Primer = True
+                self.status = 'Final'
+
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     Segundo = True
@@ -206,12 +236,14 @@ class Main(): # creo la clase principal
 
             self.nave.update(800, 600)
             self.nave.rotate()
+            self.nave.boom()
 
             if self.nave.rect.centerx == 570 and self.nave.angle % 180 >= 0:
                 self.nave.rotando = False
                 self.nave.vx -= 1
 
             if self.nave.rect.centerx <= 40:
+                self.nave.vx = 0
                 self.planeta.despegue(800, 600)
                 self.asteroidsGroup.update(800, 600)
 
@@ -235,14 +267,10 @@ class Main(): # creo la clase principal
                     self.nave.rect.centery -= self.nave.vx
                 elif self.nave.rect.centery < 300:
                     self.nave.rect.centery += self.nave.vx
-
-
-                            
             
                 if self.planeta1.rect.centerx == 800 and self.nave.rect.centerx >= 570:
-                    print(self.nave.rect.centerx)
                     Segundo = True
-                    self.status = 'ganaste'                    
+                    self.status = 'Final'                    
 
 
 
@@ -264,31 +292,50 @@ class Main(): # creo la clase principal
         
         
         
-        self.status = 'ganaste'
+        self.status = 'Final'
 
-    def congratulation(self):
-        Enhorabuena = False
-        self.status = 'ganaste'
-        rojo = 0
-        direccion = 1
-        while not Enhorabuena:
-            for events in pg.event.get():
-                if events.type == pg.KEYDOWN:
-                    if events.key == pg.K_SPACE:
-                        Enhorabuena = True
-                        self.status = 'Portada'
-                if rojo >=255:
-                    direccion = -1
-                if rojo <= 0:
-                    direccion = 1
+    def game_final(self):
+        self.status = 'Final'
+        game_over = False
+        while not game_over:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return self.quit()
+                if event.type == KEYDOWN:
+                    if event.unicode in "abcdefghijklmnñopqrstuvwyz" and len(self.escritura.caracteres) <= 5:
+                        self.escritura.caracteres += event.unicode
+                        self.escritura.valor += 1
+                    elif event.key == pg.K_BACKSPACE:
+                        self.escritura.caracteres = self.escritura.caracteres[:-1]
+                        self.escritura.valor -= 1
+                        if self.escritura.valor < 0:
+                            self.escritura.valor = 0
 
-                rojo += direccion
 
-            self.pantalla.fill((rojo, 0, 0))
-            self.pantalla.blit(self.puntuacion, (700, 30))
+
+
+
+            game_over = self.handlenEvent()
+            self.acabado = self.gameOver.render("GAME OVER", False, (255, 0, 0))
+            self.intro = self.pulsa_espacio.render("Pulsa <INTRO> para continuar", False, (BLACK))
+            self.text_alias = self.pulsa_espacio.render("Escribe tu alias", False, (BLACK))
+            self.text_puntuacion = self.pulsa_espacio.render("Tu puntuación :", False, (BLACK))
+            self.puntuacion = self.numeros.render(str(self.score), True, WHITE)
+
+            self.pantalla.fill(DARK_GREEN)
+
+            self.pantalla.blit(self.acabado, (125, 50))
+            self.pantalla.blit(self.text_alias, (305, 275))
+            self.pantalla.blit(self.text_puntuacion, (140, 350))
+            self.pantalla.blit(self.puntuacion, (400, 350))
+            self.pantalla.blit(self.intro, (200, 500))
+            text = self.escritura.render()
+            pg.draw.rect(self.pantalla, (WHITE), text[0])
+            self.pantalla.blit(text[1], self.escritura.pos())
+            
+
 
             pg.display.flip()
-            self.clock.tick
 
 
     def main_loop(self):
@@ -301,6 +348,8 @@ class Main(): # creo la clase principal
                 self.segundo_nivel()
             if self.status == 'ganaste':
                 self.congratulation()
+            if self.status == 'Final':
+                self.game_final()
 
     def quit(self):
         pg.quit()
